@@ -1,0 +1,22 @@
+/* 백준 사이트에 적용될 스타일 */
+
+/* 워크북 목록 페이지의 progress-bar 텍스트 스타일 */
+.boj-progression-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 12px;
+  font-weight: 600;
+  color: #333;
+  z-index: 10;
+  pointer-events: none;
+  white-space: nowrap;
+  text-shadow: 0 0 2px rgba(255, 255, 255, 0.8), 0 0 4px rgba(255, 255, 255, 0.6);
+}
+
+/* progress 컨테이너를 relative로 설정 */
+table.table tbody tr td .progress {
+  position: relative !important;
+}
+
