@@ -261,7 +261,9 @@
   
   // 워크북 목록 페이지에서 저장된 데이터로 progress-bar 업데이트
   function updateAllWorkbookProgressBars() {
-    if (window.location.pathname !== '/workbook/top') return;
+    // /workbook/top 또는 /workbook/top/숫자 페이지에서만 작동
+    const path = window.location.pathname;
+    if (!path.match(/^\/workbook\/top(\/\d+)?$/)) return;
     
     chrome.storage.local.get(['workbooks'], (result) => {
       const workbooks = result.workbooks || {};
@@ -477,7 +479,8 @@
   function initCrawling() {
     const path = window.location.pathname;
     
-    if (path === '/workbook/top') {
+    // /workbook/top 또는 /workbook/top/숫자 페이지
+    if (path.match(/^\/workbook\/top(\/\d+)?$/)) {
       setTimeout(() => {
         crawlWorkbookList();
         setTimeout(() => {
@@ -513,7 +516,8 @@
   // storage 변경 감지하여 progress-bar 자동 업데이트
   chrome.storage.onChanged.addListener((changes, areaName) => {
     if (areaName === 'local' && changes.workbooks) {
-      if (window.location.pathname === '/workbook/top') {
+      const path = window.location.pathname;
+      if (path.match(/^\/workbook\/top(\/\d+)?$/)) {
         console.log('BOJ Progression: 워크북 데이터 변경 감지, progress-bar 업데이트');
         setTimeout(() => {
           updateAllWorkbookProgressBars();

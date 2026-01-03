@@ -66,14 +66,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         } else {
           console.log('BOJ Progression (background): 저장 완료 - progress:', workbookData.progress);
           
-          // 저장 후 목록 페이지가 열려있으면 업데이트 요청
-          chrome.tabs.query({ url: 'https://www.acmicpc.net/workbook/top' }, (tabs) => {
+          // 저장 후 목록 페이지가 열려있으면 업데이트 요청 (/workbook/top 또는 /workbook/top/숫자)
+          chrome.tabs.query({ url: 'https://www.acmicpc.net/*' }, (tabs) => {
             tabs.forEach(tab => {
-              chrome.tabs.sendMessage(tab.id, { type: 'UPDATE_PROGRESS_BARS' }, (response) => {
-                if (chrome.runtime.lastError) {
-                  console.log('BOJ Progression (background): 목록 페이지에 메시지 전송 실패 (페이지가 열려있지 않을 수 있음)');
-                }
-              });
+              // URL 패턴 확인 - /workbook/top 또는 /workbook/top/숫자
+              if (tab.url && tab.url.match(/^https:\/\/www\.acmicpc\.net\/workbook\/top(\/\d+)?(\?.*)?$/)) {
+                chrome.tabs.sendMessage(tab.id, { type: 'UPDATE_PROGRESS_BARS' }, (response) => {
+                  if (chrome.runtime.lastError) {
+                    console.log('BOJ Progression (background): 목록 페이지에 메시지 전송 실패 (페이지가 열려있지 않을 수 있음)');
+                  }
+                });
+              }
             });
           });
         }
