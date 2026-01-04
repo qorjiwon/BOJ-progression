@@ -1,79 +1,34 @@
-// 워크북 데이터 관리
-let workbooks = {};
-
 // DOM 요소
-const workbookListEl = document.getElementById('workbookList');
+const defaultLanguageSelect = document.getElementById('defaultLanguage');
+const saveLanguageBtn = document.getElementById('saveLanguageBtn');
+const saveMessage = document.getElementById('saveMessage');
 
 // 초기화
 document.addEventListener('DOMContentLoaded', async () => {
-  await loadWorkbooks();
-  renderWorkbookList();
+  await loadDefaultLanguage();
   
-  // 현재 탭에서 데이터 새로고침
-  refreshCurrentTabData();
+  // 언어 설정 저장 버튼
+  saveLanguageBtn.addEventListener('click', saveDefaultLanguage);
 });
 
-// 워크북 데이터 로드
-async function loadWorkbooks() {
-  const result = await chrome.storage.local.get(['workbooks']);
-  workbooks = result.workbooks || {};
-}
-
-// 현재 탭에서 데이터 새로고침
-async function refreshCurrentTabData() {
-  try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (tab && tab.url && tab.url.includes('acmicpc.net')) {
-      chrome.tabs.sendMessage(tab.id, { type: 'REFRESH_DATA' }, (response) => {
-        if (chrome.runtime.lastError) {
-          return;
-        }
-        setTimeout(async () => {
-          await loadWorkbooks();
-          renderWorkbookList();
-        }, 500);
-      });
-    }
-  } catch (error) {
-    console.error('Error refreshing data:', error);
+// 기본 언어 로드
+async function loadDefaultLanguage() {
+  const result = await chrome.storage.local.get(['defaultLanguage']);
+  if (result.defaultLanguage) {
+    defaultLanguageSelect.value = result.defaultLanguage;
   }
 }
 
-// 워크북 목록 렌더링
-function renderWorkbookList() {
-  const workbookArray = Object.values(workbooks);
+// 기본 언어 저장
+async function saveDefaultLanguage() {
+  const languageValue = defaultLanguageSelect.value;
+  await chrome.storage.local.set({ defaultLanguage: languageValue });
   
-  if (workbookArray.length === 0) {
-    workbookListEl.innerHTML = '<p class="empty-message">워크북 정보가 없습니다.<br>백준 워크북 페이지를 방문해주세요.</p>';
-    return;
-  }
+  saveMessage.textContent = '저장되었습니다!';
+  saveMessage.style.color = '#28a745';
   
-  workbookListEl.innerHTML = workbookArray
-    .sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''))
-    .map(workbook => {
-      const progress = workbook.progress || (workbook.totalProblems > 0 
-        ? Math.round((workbook.solvedProblems / workbook.totalProblems) * 100) 
-        : 0);
-      const solvedText = workbook.solvedProblems !== undefined 
-        ? `${workbook.solvedProblems}/${workbook.totalProblems}` 
-        : (workbook.progress ? `${workbook.progress}%` : '-');
-      
-      return `
-        <div class="workbook-item">
-          <div class="workbook-info">
-            <div class="workbook-title">${workbook.title || `워크북 #${workbook.id}`}</div>
-            <div class="workbook-progress">
-              <div class="progress-bar-container">
-                <div class="progress-bar-fill" style="width: ${progress}%"></div>
-              </div>
-              <div class="progress-text">${solvedText}</div>
-            </div>
-          </div>
-          <div class="workbook-actions">
-            <a href="https://www.acmicpc.net/workbook/view/${workbook.id}" target="_blank" class="icon-btn" title="워크북 열기">🔗</a>
-          </div>
-        </div>
-      `;
-    }).join('');
+  setTimeout(() => {
+    saveMessage.textContent = '';
+  }, 2000);
 }
 

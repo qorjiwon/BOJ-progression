@@ -475,6 +475,101 @@
     }, 500);
   }
   
+  // 제출 페이지에서 기본 언어 자동 선택
+  function setDefaultLanguage(force = false) {
+    const path = window.location.pathname;
+    if (!path.match(/^\/submit\/\d+$/)) {
+      return;
+    }
+    
+    chrome.storage.local.get(['defaultLanguage'], (result) => {
+      const defaultLanguage = result.defaultLanguage;
+      
+      if (!defaultLanguage) {
+        console.log('BOJ Progression: 기본 언어가 설정되지 않았습니다');
+        return;
+      }
+      
+      // 언어 선택 드롭다운 찾기
+      const languageSelect = document.getElementById('language');
+      
+      if (!languageSelect) {
+        return;
+      }
+      
+      // 이미 선택된 언어가 설정된 기본 언어와 같으면 스킵 (force가 아닐 때만)
+      if (!force && languageSelect.value === defaultLanguage) {
+        return;
+      }
+      
+      // 선택할 옵션이 있는지 확인
+      const option = languageSelect.querySelector(`option[value="${defaultLanguage}"]`);
+      if (!option) {
+        console.warn(`BOJ Progression: 언어 값 ${defaultLanguage}를 찾을 수 없습니다`);
+        return;
+      }
+      
+      console.log(`BOJ Progression: 언어 변경 시도: ${languageSelect.value} -> ${defaultLanguage} (${option.textContent.trim()})`);
+      
+      // jQuery와 chosen 라이브러리가 있으면 jQuery를 통해 업데이트
+      if (typeof jQuery !== 'undefined' && typeof jQuery.fn.chosen !== 'undefined') {
+        const $select = jQuery(languageSelect);
+        
+        // chosen이 이미 초기화되어 있으면
+        if ($select.data('chosen')) {
+          // value 변경 후 chosen 업데이트
+          $select.val(defaultLanguage).trigger('chosen:updated');
+          console.log('BOJ Progression: jQuery chosen을 통해 언어 변경 완료');
+          
+          // chosen-container 텍스트도 확인 (혹시 모를 경우를 대비)
+          setTimeout(() => {
+            updateChosenContainerText(option.textContent.trim());
+          }, 200);
+        } else {
+          // chosen이 아직 초기화되지 않았으면 잠시 대기 후 재시도
+          setTimeout(() => {
+            if ($select.data('chosen')) {
+              $select.val(defaultLanguage).trigger('chosen:updated');
+              setTimeout(() => {
+                updateChosenContainerText(option.textContent.trim());
+              }, 200);
+            } else {
+              // chosen이 없으면 직접 설정
+              languageSelect.value = defaultLanguage;
+              const changeEvent = new Event('change', { bubbles: true });
+              languageSelect.dispatchEvent(changeEvent);
+              updateChosenContainerText(option.textContent.trim());
+            }
+          }, 500);
+        }
+      } else {
+        // jQuery가 없으면 직접 설정
+        languageSelect.value = defaultLanguage;
+        const changeEvent = new Event('change', { bubbles: true });
+        languageSelect.dispatchEvent(changeEvent);
+        
+        // chosen-container 텍스트 직접 업데이트
+        updateChosenContainerText(option.textContent.trim());
+      }
+      
+      console.log(`BOJ Progression: 기본 언어로 설정 완료: ${option.textContent.trim()} (${defaultLanguage})`);
+    });
+  }
+  
+  // chosen-container 텍스트 직접 업데이트 헬퍼 함수
+  function updateChosenContainerText(text) {
+    setTimeout(() => {
+      const chosenContainer = document.getElementById('language_chosen');
+      if (chosenContainer) {
+        const chosenSingle = chosenContainer.querySelector('.chosen-single span');
+        if (chosenSingle && chosenSingle.textContent !== text) {
+          chosenSingle.textContent = text;
+          console.log('BOJ Progression: chosen-container 텍스트 직접 업데이트:', text);
+        }
+      }
+    }, 100);
+  }
+  
   // 페이지 타입에 따라 적절한 크롤링 함수 실행
   function initCrawling() {
     const path = window.location.pathname;
@@ -491,6 +586,49 @@
       setTimeout(() => {
         crawlWorkbookDetailOnPage();
       }, 100);
+    } else if (path.match(/^\/submit\/\d+$/)) {
+      // 제출 페이지에서 기본 언어 설정
+      console.log('BOJ Progression: 제출 페이지 감지, 기본 언어 설정 시작');
+      
+      // chosen-container가 나타날 때까지 대기
+      const checkChosen = () => {
+        const chosenContainer = document.getElementById('language_chosen');
+        const languageSelect = document.getElementById('language');
+        
+        if (languageSelect && chosenContainer) {
+          console.log('BOJ Progression: chosen-container 발견, 언어 설정');
+          setDefaultLanguage(true);
+        } else {
+          setTimeout(checkChosen, 300);
+        }
+      };
+      
+      // 초기 시도
+      setTimeout(() => {
+        checkChosen();
+      }, 500);
+      
+      // MutationObserver로 chosen-container 감지
+      const observer = new MutationObserver((mutations) => {
+        const chosenContainer = document.getElementById('language_chosen');
+        if (chosenContainer) {
+          console.log('BOJ Progression: MutationObserver로 chosen-container 감지');
+          observer.disconnect();
+          setTimeout(() => {
+            setDefaultLanguage(true);
+          }, 500);
+        }
+      });
+      
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true
+      });
+      
+      // 최대 5초 후 observer 정리
+      setTimeout(() => {
+        observer.disconnect();
+      }, 5000);
     }
   }
   

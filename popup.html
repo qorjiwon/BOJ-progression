@@ -10,14 +10,34 @@
   <div class="container">
     <header>
       <h1>BOJ Progression</h1>
-      <p class="subtitle">백준 워크북 추적</p>
+      <p class="subtitle">백준 제출 편의 기능</p>
     </header>
     
-    <div class="workbook-list">
-      <h2>워크북 목록</h2>
-      <div id="workbookList" class="list-container">
-        <p class="empty-message">워크북 정보가 없습니다.<br>백준 워크북 페이지를 방문해주세요.</p>
+    <div class="settings-section">
+      <h2>기본 언어 설정</h2>
+      <p class="settings-description">제출 페이지에서 자동으로 선택될 언어를 설정하세요.</p>
+      <div class="form-group">
+        <label for="defaultLanguage">기본 언어:</label>
+        <select id="defaultLanguage" class="language-select">
+          <option value="84">C++17</option>
+          <option value="85">C++17 (Clang)</option>
+          <option value="0">C99</option>
+          <option value="28">Python 3</option>
+          <option value="73">PyPy3</option>
+          <option value="93">Java 11</option>
+          <option value="94">Rust 2018</option>
+          <option value="12">Go</option>
+          <option value="17">node.js</option>
+          <option value="86">C#</option>
+          <option value="69">Kotlin (JVM)</option>
+          <option value="74">Swift</option>
+          <option value="29">D</option>
+          <option value="68">Ruby</option>
+          <option value="58">Text</option>
+        </select>
       </div>
+      <button id="saveLanguageBtn" class="btn btn-primary">저장</button>
+      <p id="saveMessage" class="save-message"></p>
     </div>
   </div>
 
