@@ -494,6 +494,7 @@
       const languageSelect = document.getElementById('language');
       
       if (!languageSelect) {
+        console.log('BOJ Progression: language select를 찾을 수 없습니다');
         return;
       }
       
@@ -517,6 +518,9 @@
         
         // chosen이 이미 초기화되어 있으면
         if ($select.data('chosen')) {
+          // 드롭다운 열기
+          $select.trigger('chosen:open');
+          
           // value 변경 후 chosen 업데이트
           $select.val(defaultLanguage).trigger('chosen:updated');
           console.log('BOJ Progression: jQuery chosen을 통해 언어 변경 완료');
@@ -524,14 +528,20 @@
           // chosen-container 텍스트도 확인 (혹시 모를 경우를 대비)
           setTimeout(() => {
             updateChosenContainerText(option.textContent.trim());
+            // 드롭다운 닫기
+            $select.trigger('chosen:close');
           }, 200);
         } else {
           // chosen이 아직 초기화되지 않았으면 잠시 대기 후 재시도
           setTimeout(() => {
             if ($select.data('chosen')) {
+              // 드롭다운 열기
+              $select.trigger('chosen:open');
               $select.val(defaultLanguage).trigger('chosen:updated');
               setTimeout(() => {
                 updateChosenContainerText(option.textContent.trim());
+                // 드롭다운 닫기
+                $select.trigger('chosen:close');
               }, 200);
             } else {
               // chosen이 없으면 직접 설정
@@ -629,6 +639,29 @@
       setTimeout(() => {
         observer.disconnect();
       }, 5000);
+    } else if (path.match(/^\/problem\/status\/\d+$/)) {
+      // 문제 상태 페이지에서 기본 언어와 페이지 번호를 URL에 추가하여 리다이렉트
+      console.log('BOJ Progression: 문제 상태 페이지 감지, 리다이렉트 시작');
+      
+      chrome.storage.local.get(['defaultLanguage'], (result) => {
+        const defaultLanguage = result.defaultLanguage;
+        
+        if (!defaultLanguage) {
+          console.log('BOJ Progression: 기본 언어가 설정되지 않았습니다');
+          return;
+        }
+        
+        // 현재 경로에서 문제 번호 추출
+        const match = path.match(/^\/problem\/status\/(\d+)$/);
+        if (match) {
+          const problemNumber = match[1];
+          const newPath = `/problem/status/${problemNumber}/${defaultLanguage}/1`;
+          const newUrl = `${window.location.origin}${newPath}${window.location.search}${window.location.hash}`;
+          
+          console.log(`BOJ Progression: 리다이렉트: ${path} -> ${newPath}`);
+          window.location.href = newUrl;
+        }
+      });
     }
   }
   
